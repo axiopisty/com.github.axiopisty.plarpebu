@@ -1,0 +1,38 @@
+#
+#  BUNDLE 
+#
+
+
+Bundle-Version:					1.0.0.${tstamp}
+Bundle-Description: A component which launches a JavaFX application and provides the Stage for \
+	use in other bundles via the service registry.
+
+Private-Package:  \
+	com.github.axiopisty.plarpebu.javafx.launcher.provider
+
+Export-Package: com.github.axiopisty.plarpebu.javafx.launcher.api
+
+Provide-Capability: \
+	osgi.service;objectClass:List<String>="com.github.axiopisty.plarpebu.javafx.launcher.api.StageService"
+	
+-buildpath: \
+	osgi.enroute.base.api;version=1.0,\
+	com.github.axiopisty.plarpebu.javafx.launcher.api;version=latest
+	
+-testpath: \
+	osgi.enroute.junit.wrapper;version=4.12
+
+-runrequires: osgi.identity;filter:='(osgi.identity=com.github.axiopisty.plarpebu.javafx.launcher.provider)'
+	
+-runbundles: \
+	com.github.axiopisty.plarpebu.javafx.launcher.provider;version=snapshot,\
+	org.apache.felix.configadmin;version='[1.8.8,1.8.9)',\
+	org.apache.felix.log;version='[1.0.1,1.0.2)',\
+	org.apache.felix.scr;version='[2.0.2,2.0.3)',\
+	org.eclipse.equinox.metatype;version='[1.4.100,1.4.101)',\
+	org.osgi.service.metatype;version='[1.3.0,1.3.1)'
+
+-runsystempackages: \
+	javafx.application \
+	, javafx.event \
+	, javafx.stage
