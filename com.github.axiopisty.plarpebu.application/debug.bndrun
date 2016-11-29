@@ -1,0 +1,12 @@
+#
+# PLARPEBU APPLICATION DEBUG RUN SPECIFICATION
+#
+
+-include: ~com.github.axiopisty.plarpebu.bndrun
+
+-runrequires.debug:  ${debug-bundles}
+
+-runtrace: true
+
+-runbundles: \
+	${error;Resolve first}

@@ -1,0 +1,17 @@
+#
+#  RUN SPECIFICATION
+#
+
+
+Bundle-Version:				1.0.0.${tstamp}
+Bundle-SymbolicName:		com.github.axiopisty.plarpebu.application.launch
+JPM-Command:					plarpeb
+
+
+-runfw:						org.eclipse.osgi
+
+-runrequires:  \
+	osgi.identity;filter:='(osgi.identity=com.github.axiopisty.plarpebu.application)'
+
+-runbundles: \
+	${error;Resolve first}
