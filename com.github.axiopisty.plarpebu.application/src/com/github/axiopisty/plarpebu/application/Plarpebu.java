@@ -13,6 +13,7 @@ import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.log.LogService;
 
 import com.github.axiopisty.plarpebu.javafx.launcher.api.StageService;
+import com.github.axiopisty.plarpebu.mediaplayer.api.MediaPlayer;
 
 import javafx.application.Platform;
 import javafx.scene.Scene;
@@ -47,6 +48,8 @@ public class Plarpebu {
 	
 	@Reference LogService log;
 	
+	@Reference MediaPlayer mediaPlayer;
+	
 	private FileChooser chooser;
 
 	@Activate
@@ -71,7 +74,7 @@ public class Plarpebu {
 				if(mp3 != null) {
 					String file = toString(mp3);
 					loadLbl.setText(file);
-					log.log(LogService.LOG_DEBUG, "Selected file: " + file);
+					mediaPlayer.load(mp3);
 				}
 			});
 			
@@ -79,18 +82,21 @@ public class Plarpebu {
 			playBtn.setText("Play");
 			playBtn.setOnAction(event -> {
 				log.log(LogService.LOG_DEBUG, "pressed: play");
+				mediaPlayer.play();
 			});
 			
 			final Button pauseBtn = new Button();
 			pauseBtn.setText("Pause");
 			pauseBtn.setOnAction(event -> {
 				log.log(LogService.LOG_DEBUG, "pressed: pause");
+				mediaPlayer.pause();
 			});
 			
 			final Button stopBtn = new Button();
 			stopBtn.setText("Stop");
 			stopBtn.setOnAction(event -> {
 				log.log(LogService.LOG_DEBUG, "pressed: stop");
+				mediaPlayer.stop();
 			});
 
 			HBox searchBox = new HBox();

@@ -17,7 +17,7 @@ import osgi.enroute.debug.api.Debug;
 
 @Component(
 	name = "com.github.axiopisty.plarpebu.mediaplayer.mp3",
-	service = KaraokePlayer.class, 
+	service = MediaPlayer.class, 
 	immediate = true,
 	property = {
 		Debug.COMMAND_SCOPE + "=mp3",
@@ -50,7 +50,10 @@ public class KaraokePlayer implements MediaPlayer {
 		try {
 			this.mp3 = mp3; 
 			player = new MP3Player(mp3);
-			thread = new Thread(player);
+			thread = new Thread(() -> {
+				player.run();
+				clear();
+			});
 			thread.start();
 		} catch (LineUnavailableException | IOException | UnsupportedAudioFileException  e) {
 			e.printStackTrace();
@@ -80,6 +83,5 @@ public class KaraokePlayer implements MediaPlayer {
 	@Override
 	public void stop() {
 		ofNullable(player).ifPresent(MP3Player::stop);
-		player.stop();
 	}
 }

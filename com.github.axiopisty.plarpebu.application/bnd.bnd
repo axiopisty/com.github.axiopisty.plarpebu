@@ -20,18 +20,33 @@ JPM-Command:			plarpeb
 
 -buildpath: \
 	osgi.enroute.base.api,\
-	com.github.axiopisty.plarpebu.javafx.launcher.api;version=latest
+	com.github.axiopisty.plarpebu.javafx.launcher.api;version=latest,\
+	com.github.axiopisty.plarpebu.mediaplayer.api;version=latest
 	
 -testpath: \
 	osgi.enroute.junit.wrapper;version=4.12
 
 -runrequires: \
+	osgi.identity;filter:='(osgi.identity=org.objectweb.asm.all)',\
+	osgi.identity;filter:='(osgi.identity=org.apache.aries.util)',\
+	osgi.identity;filter:='(&(osgi.identity=org.apache.aries.util)(version>=1.1.3))',\
+	osgi.identity;filter:='(osgi.identity=org.apache.aries.spifly.dynamic.bundle)',\
+	osgi.identity;filter:='(osgi.identity=com.googlecode.soundlibs.jlayer)',\
+	osgi.identity;filter:='(osgi.identity=com.googlecode.soundlibs.mp3spi)',\
 	osgi.identity;filter:='(osgi.identity=osgi.enroute.gogo.shell.provider)',\
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.gogo.command)',\
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.gogo.runtime)',\
-	osgi.identity;filter:='(osgi.identity=com.github.axiopisty.plarpebu.javafx.launcher.provider)'
+	osgi.identity;filter:='(osgi.identity=com.github.axiopisty.plarpebu.javafx.launcher.provider)',\
+	osgi.identity;filter:='(osgi.identity=com.github.axiopisty.plarpebu.mediaplayer.provider)'
 
 -runbundles: \
+	org.objectweb.asm.all;version='[5.1.0,5.1.1)',\
+	org.apache.aries.spifly.dynamic.bundle;version='[1.0.8,1.0.9)',\
+	org.apache.aries.util;version='[1.0.0,1.0.1)',\
+	org.apache.aries.util;version='[1.1.3,1.1.4)',\
+	com.googlecode.soundlibs.tritonus-share;version='[0.3.7,0.3.8)',\
+	com.googlecode.soundlibs.jlayer;version='[1.0.1,1.0.2)',\
+	com.googlecode.soundlibs.mp3spi;version='[1.9.5,1.9.6)',\
 	org.osgi.service.metatype;version='[1.3.0,1.3.1)',\
 	org.eclipse.equinox.metatype;version='[1.4.100,1.4.101)',\
 	osgi.enroute.gogo.shell.provider;version='[2.0.0,2.0.1)',\
@@ -40,6 +55,7 @@ JPM-Command:			plarpeb
 	org.apache.felix.scr;version='[2.0.2,2.0.3)',\
 	org.apache.felix.gogo.runtime;version='[0.16.2,0.16.3)',\
 	org.apache.felix.gogo.command;version='[0.16.0,0.16.1)',\
+	com.github.axiopisty.plarpebu.mediaplayer.provider;version=snapshot,\
 	com.github.axiopisty.plarpebu.javafx.launcher.provider;version=snapshot
 
 -runsystempackages: \
