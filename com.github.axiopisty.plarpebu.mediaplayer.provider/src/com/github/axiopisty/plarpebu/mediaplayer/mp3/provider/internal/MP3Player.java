@@ -11,38 +11,17 @@ import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
 public class MP3Player implements Runnable {
-
-	private final AudioInputStream decodedAudioInputStream;
-	private final AudioFormat decodedAudioFormat;
-	private final SourceDataLine line;
-
-	private PlayerState state;
+	
 	private final Object stateLock;
 
-	public MP3Player(File mp3) throws LineUnavailableException, IOException, UnsupportedAudioFileException {
+	private MP3Reader reader;
+
+	private PlayerState state;
+
+	public MP3Player(File mp3, boolean enableDynamicWeaving) throws LineUnavailableException, IOException, UnsupportedAudioFileException {
 		stateLock = new Object();
-		System.out.println("load: " + mp3.getName());
-		final AudioInputStream in = AudioSystem.getAudioInputStream(mp3);
-		final AudioFormat format = in.getFormat();
-		decodedAudioInputStream = AudioSystem.getAudioInputStream(
-			new AudioFormat(
-				AudioFormat.Encoding.PCM_SIGNED, 
-				format.getSampleRate(), 
-				16,
-				format.getChannels(),
-				format.getChannels() * 2,
-				format.getSampleRate(),
-				false
-			),
-			in
-		);
-		decodedAudioFormat = decodedAudioInputStream.getFormat();
-		DataLine.Info info = new DataLine.Info(
-			SourceDataLine.class, 
-			decodedAudioFormat, 
-			AudioSystem.NOT_SPECIFIED
-		);
-		line = (SourceDataLine) AudioSystem.getLine(info);
+		reader = new MP3Reader(mp3, enableDynamicWeaving);
+
 		state = PlayerState.INITIALIZED;
 		System.out.println("state = PlayerState.INITIALIZED");
 	}
@@ -71,71 +50,143 @@ public class MP3Player implements Runnable {
 	@Override
 	public void run() {
 		System.out.println("MP3Player run entered.");
-		try {
-			openLine();
-			
-			int bytes = 1;
-			byte[] buffer = new byte[16000];
-			while (bytes != -1) {
-				final PlayerState temp;
-				synchronized(stateLock) {
-					temp = state;
-				}
-				
-				if (temp == PlayerState.INITIALIZED || temp == PlayerState.PAUSED) {
-					try {
-						Thread.sleep(100);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-					continue;
-				} else if (temp == PlayerState.STOPPED) {
-					break;
-				} else if (temp == PlayerState.PLAYING) {
-					try {
-						bytes = decodedAudioInputStream.read(buffer, 0, buffer.length);
-						if (bytes >= 0) {
-							byte[] pcm = new byte[bytes];
-							System.arraycopy(buffer, 0, pcm, 0, bytes);
-							line.write(buffer, 0, bytes);
-						}
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-				}
+		reader.openLine();
+		
+		int bytes = 1;
+		byte[] buffer = new byte[16000];
+		while (bytes != -1) {
+			final PlayerState temp;
+			synchronized(stateLock) {
+				temp = state;
 			}
 			
-			closeLine();
-			closeAudioInputStream();
-		} catch (LineUnavailableException e) {
-			e.printStackTrace();
+			if (temp == PlayerState.INITIALIZED || temp == PlayerState.PAUSED) {
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+					Thread.currentThread().interrupt();
+				}
+				continue;
+			} else if (temp == PlayerState.STOPPED) {
+				break;
+			} else if (temp == PlayerState.PLAYING) {
+				bytes = reader.readFromLine(buffer);
+			}
 		}
+		
+		reader.closeLine();
+		reader.closeAudioInputStream();
 		
 		System.out.println("MP3Player run exited.");
 	}
 
-	private void openLine() throws LineUnavailableException {
-		if (line != null) {
-			int bufferSize = line.getBufferSize();
-			line.open(decodedAudioFormat, bufferSize);
-			line.start();
-		}
-	}
+	private class MP3Reader {
 
-	private void closeLine() {
-		line.drain();
-		line.stop();
-		line.close();
-	}
-
-	private void closeAudioInputStream() {
-		try {
-			if (decodedAudioInputStream != null) {
-				decodedAudioInputStream.close();
+		private boolean dynamicWeavingEnabled;
+		
+		private AudioInputStream decodedAudioInputStream;
+		private AudioFormat decodedAudioFormat;
+		private SourceDataLine line;
+		
+		public MP3Reader(File mp3, boolean dynamicWeavingEnabled) throws UnsupportedAudioFileException, IOException {
+			System.out.println("MP3Reader::load: " + mp3.getName());
+			this.dynamicWeavingEnabled = dynamicWeavingEnabled;
+			System.out.println("MP3Reader::dynamicWeavingEnabled::" + dynamicWeavingEnabled);
+			
+			final AudioInputStream in = AudioSystem.getAudioInputStream(mp3);
+			final AudioFormat format = in.getFormat();
+			
+			if(dynamicWeavingEnabled) {
+				decodedAudioInputStream = AudioSystem.getAudioInputStream(
+					new AudioFormat(
+						AudioFormat.Encoding.PCM_SIGNED, 
+						format.getSampleRate(), 
+						16,
+						format.getChannels(),
+						format.getChannels() * 2,
+						format.getSampleRate(),
+						false
+					),
+					in
+				);
+				
+				decodedAudioFormat = decodedAudioInputStream.getFormat();
+				
+				DataLine.Info info = new DataLine.Info(
+					SourceDataLine.class, 
+					decodedAudioFormat, 
+					AudioSystem.NOT_SPECIFIED
+				);
+				
+				SourceDataLine temp;
+				try {
+					temp = (SourceDataLine) AudioSystem.getLine(info);
+				} catch (LineUnavailableException e) {
+					e.printStackTrace();
+					temp = null;
+				}
+				line = temp;
+				
+			} else {
+				decodedAudioInputStream = null;
+				decodedAudioFormat = null;
+				line = null;
 			}
-		} catch (IOException e) {
-			e.printStackTrace();
+			System.out.println("MP3Reader::constructed");
 		}
+		
+		public void openLine() {
+			if(dynamicWeavingEnabled) {
+				if (line != null) {
+					int bufferSize = line.getBufferSize();
+					try {
+						line.open(decodedAudioFormat, bufferSize);
+						line.start();
+					} catch (LineUnavailableException e) {
+						e.printStackTrace();
+					}
+				}
+			};
+		}
+		
+		public int readFromLine(final byte[] buffer) {
+			int bytes = 0;
+			if(dynamicWeavingEnabled) {
+				try {
+					bytes = decodedAudioInputStream.read(buffer, 0, buffer.length);
+					if (bytes >= 0) {
+						byte[] pcm = new byte[bytes];
+						System.arraycopy(buffer, 0, pcm, 0, bytes);
+						line.write(buffer, 0, bytes);
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			return bytes;
+		}
+
+		public void closeLine() {
+			if(dynamicWeavingEnabled) {
+				line.drain();
+				line.stop();
+				line.close();
+			}
+		}
+
+		public void closeAudioInputStream() {
+			if(dynamicWeavingEnabled) {
+				try {
+					if (decodedAudioInputStream != null) {
+						decodedAudioInputStream.close();
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+
 	}
 
 }
