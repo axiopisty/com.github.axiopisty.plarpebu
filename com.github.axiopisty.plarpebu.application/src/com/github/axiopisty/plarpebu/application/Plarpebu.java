@@ -16,8 +16,10 @@ import com.github.axiopisty.plarpebu.javafx.launcher.api.StageService;
 import com.github.axiopisty.plarpebu.mediaplayer.api.MediaPlayer;
 
 import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
@@ -58,15 +60,22 @@ public class Plarpebu {
 		Platform.runLater(() -> {
 			Stage primaryStage = stageService.getInstance();
 			primaryStage.setTitle(config.title());
-
+			
+			
 			chooser = new FileChooser();
 			chooser.setTitle("Select an MP3 file.");
 			chooser.getExtensionFilters().addAll(
 				new ExtensionFilter("Audio Files", "*.mp3")
 			);
-			
+
+			final CheckBox cb = new CheckBox("Enable Dynamic Weaving");
+			cb.selectedProperty().addListener((observable, oldv, newv) -> {
+				System.out.println("GUI::enableDynamicWeaving::" + newv);
+				mediaPlayer.enableDynamicWeaving(newv);
+			});
+			cb.setSelected(true);
+
 			final Label loadLbl = new Label();
-			
 			final Button loadBtn = new Button();
 			loadBtn.setText("Load");
 			loadBtn.setOnAction(event -> {
@@ -97,6 +106,7 @@ public class Plarpebu {
 			stopBtn.setOnAction(event -> {
 				log.log(LogService.LOG_DEBUG, "pressed: stop");
 				mediaPlayer.stop();
+				loadLbl.setText("");
 			});
 
 			HBox searchBox = new HBox();
@@ -106,7 +116,7 @@ public class Plarpebu {
 			controls.getChildren().addAll(playBtn, pauseBtn, stopBtn);
 			
 			VBox pane = new VBox();
-			pane.getChildren().addAll(searchBox, controls);
+			pane.getChildren().addAll(cb, searchBox, controls);
 			
 			StackPane root = new StackPane();
 			root.getChildren().add(pane);
@@ -116,15 +126,11 @@ public class Plarpebu {
 			primaryStage.setScene(scene);
 		});
 		show();
+
 	}
 	
 	private String toString(File file) {
-		String string;
-		try {
-			string = file.getCanonicalPath();
-		} catch (IOException e) {
-			string = file.getName();
-		}
+		String string = file.getName();
 		return string;
 	} 
 

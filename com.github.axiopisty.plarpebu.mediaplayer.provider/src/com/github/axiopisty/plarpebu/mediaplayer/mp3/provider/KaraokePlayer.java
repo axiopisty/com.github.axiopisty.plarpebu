@@ -2,6 +2,7 @@ package com.github.axiopisty.plarpebu.mediaplayer.mp3.provider;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Optional;
 
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
@@ -25,13 +26,15 @@ import osgi.enroute.debug.api.Debug;
 		Debug.COMMAND_FUNCTION + "=play",
 		Debug.COMMAND_FUNCTION + "=pause",
 		Debug.COMMAND_FUNCTION + "=stop",
+		Debug.COMMAND_FUNCTION + "=enableDynamicWeaving",
 	}
 )
 public class KaraokePlayer implements MediaPlayer {
 	
-	private File mp3;
 	private MP3Player player;
+	private File mp3;
 	private Thread thread;
+	private boolean enableDynamicWeaving = false;
 	
 	public void load(String path) {
 		load(new File(path));
@@ -43,13 +46,17 @@ public class KaraokePlayer implements MediaPlayer {
 	}
 	
 	private synchronized void initialize(File mp3) {
-		if(this.mp3 != null) {
-			player.stop();
-			clear();
+		if(mp3 == null) {
+			return;
 		}
+		ofNullable(player).ifPresent(p -> {
+			p.stop();
+			clear();
+		});
+
 		try {
-			this.mp3 = mp3; 
-			player = new MP3Player(mp3);
+			this.mp3 = mp3;
+			player = new MP3Player(mp3, enableDynamicWeaving);
 			thread = new Thread(() -> {
 				player.run();
 				clear();
@@ -65,8 +72,8 @@ public class KaraokePlayer implements MediaPlayer {
 	}
 	
 	private void clear() {
-		mp3 = null;
 		player = null; 
+		mp3 = null;
 		thread = null; 
 	}
 	
@@ -84,4 +91,11 @@ public class KaraokePlayer implements MediaPlayer {
 	public void stop() {
 		ofNullable(player).ifPresent(MP3Player::stop);
 	}
+	
+	@Override
+	synchronized public void enableDynamicWeaving(boolean enabled) {
+		this.enableDynamicWeaving = enabled;
+		initialize(mp3);
+	}
+
 }

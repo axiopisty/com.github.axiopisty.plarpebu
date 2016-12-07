@@ -15,4 +15,6 @@ public interface MediaPlayer {
 	
 	void stop();
 	
+	void enableDynamicWeaving(boolean enabled);
+	
 }
